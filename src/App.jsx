@@ -34,6 +34,7 @@ const DashboardManager = () => {
 
 function App() {
   return (
+    <div data-theme="champion-theme" className="min-h-screen bg-base-100">
     <BrowserRouter>
       <AuthProvider>
         <Routes>
@@ -46,6 +47,7 @@ function App() {
         </Routes>
       </AuthProvider>
     </BrowserRouter>
+    </div>
   );
 }
 

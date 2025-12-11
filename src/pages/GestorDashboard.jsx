@@ -32,7 +32,7 @@ export default function GestorDashboard() {
 
     return (
         <div className="p-8 max-w-5xl mx-auto">
-            <h1 className="text-3xl font-bold mb-6 text-primary">Painel do Gestor</h1>
+            <h1 className="text-3xl font-bold mb-8">Painel do Gestor</h1>
             
             <div className="card bg-base-100 shadow-xl">
                 <div className="card-body">
