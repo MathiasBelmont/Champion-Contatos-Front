@@ -24,7 +24,7 @@ export default function LoginPage() {
         <div className="flex min-h-screen items-center justify-center bg-base-200">
             <div className="card w-96 bg-base-100 shadow-xl">
                 <div className="card-body">
-                    <h2 className="card-title justify-center text-2xl font-bold text-primary">Champion Saúde</h2>
+                    <h2 className="card-title justify-center text-2xl font-bold text-primary">Champion Saúde Animal</h2>
                     <p className="text-center text-gray-500 text-sm mb-4">Gerenciamento de Carteira</p>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

@@ -2,33 +2,34 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { useContext } from 'react';
 import LoginPage from './pages/LoginPage';
+import AgenteDashboard from './pages/AgenteDashboard';
+import GestorDashboard from './pages/GestorDashboard';
 
-// --- Componente de Proteção de Rota ---
-// Se não tiver logado, manda pro Login. Se tiver, mostra a página.
 const PrivateRoute = ({ children }) => {
   const { signed, loading } = useContext(AuthContext);
-
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center"><span className="loading loading-spinner loading-lg"></span></div>;
-  }
-
+  if (loading) return <div className="loading loading-spinner"></div>;
   return signed ? children : <Navigate to="/" />;
 };
 
-// --- Tela de Dashboard (Temporária) ---
-const Dashboard = () => {
-  const { logout, user } = useContext(AuthContext);
-  return (
-    <div className="navbar bg-base-100 shadow-md px-10">
-      <div className="flex-1">
-        <a className="btn btn-ghost text-xl">Champion Dashboard</a>
-      </div>
-      <div className="flex-none gap-4">
-        <span className="text-sm font-bold">Olá, {user?.sub}</span>
-        <button onClick={logout} className="btn btn-error btn-sm">Sair</button>
-      </div>
-    </div>
-  )
+// Componente inteligente que decide qual Dashboard mostrar
+const DashboardManager = () => {
+    const { user, logout } = useContext(AuthContext);
+    console.log("Dados do Usuário:", user);
+    return (
+        <div>
+            {/* Navbar Simples */}
+            <div className="navbar bg-base-300 px-8">
+                <div className="flex-1 font-bold text-xl">Champion CRM</div>
+                <div className="flex-none gap-4">
+                    <span>{user?.sub} ({user?.role})</span>
+                    <button onClick={logout} className="btn btn-sm btn-error">Sair</button>
+                </div>
+            </div>
+
+            {/* Decide a tela baseado na Role */}
+            {user?.role === 'ADMIN' ? <GestorDashboard /> : <AgenteDashboard />}
+        </div>
+    );
 }
 
 function App() {
@@ -37,13 +38,11 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<LoginPage />} />
-          
           <Route path="/dashboard" element={
             <PrivateRoute>
-              <Dashboard />
+              <DashboardManager />
             </PrivateRoute>
           } />
-          
         </Routes>
       </AuthProvider>
     </BrowserRouter>
