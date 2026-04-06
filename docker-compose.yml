@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # Banco de Dados MySQL
+  db:
+    image: mysql:8.0
+    container_name: champion-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: champion_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # Backend (Spring Boot)
+  backend:
+    build:
+      context: ./champion-contatos-back
+      dockerfile: Dockerfile
+    container_name: champion-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      # Sobrescreve as credenciais do application.properties para apontar para o container 'db'
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/champion_db?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      # update gera/atualiza as tabelas automaticamente baseado nas Entidades Java
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update 
+    depends_on:
+      - db
+
+  # Frontend (React + Vite)
+  frontend:
+    build:
+      context: ./champion-contatos-front
+      dockerfile: Dockerfile
+    container_name: champion-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
