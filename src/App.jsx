@@ -12,6 +12,14 @@ const PrivateRoute = ({ children }) => {
   return signed ? children : <Navigate to="/" />;
 };
 
+const AdminRoute = ({ children }) => {
+  const { signed, loading, user } = useContext(AuthContext);
+  if (loading) return <div className="loading loading-spinner"></div>;
+  if (!signed) return <Navigate to="/" />;
+  if (user?.role !== 'ADMIN') return <Navigate to="/dashboard" />;
+  return children;
+};
+
 // Componente inteligente que decide qual Dashboard mostrar
 const DashboardManager = () => {
   const { user, logout } = useContext(AuthContext);
@@ -45,10 +53,10 @@ function App() {
                 <DashboardManager />
               </PrivateRoute>
             } />
-            <Route path="/gerenciamento" element={
-              <PrivateRoute>
+            <Route path="/admin/usuarios" element={
+              <AdminRoute>
                 <GerenciamentoUsuarios />
-              </PrivateRoute>
+              </AdminRoute>
             } />
           </Routes>
         </AuthProvider>
