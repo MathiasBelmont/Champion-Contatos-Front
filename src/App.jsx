@@ -4,6 +4,7 @@ import { useContext } from 'react';
 import LoginPage from './pages/LoginPage';
 import AgenteDashboard from './pages/AgenteDashboard';
 import GestorDashboard from './pages/GestorDashboard';
+import GerenciamentoUsuarios from './pages/GerenciamentoUsuarios';
 
 const PrivateRoute = ({ children }) => {
   const { signed, loading } = useContext(AuthContext);
@@ -13,40 +14,45 @@ const PrivateRoute = ({ children }) => {
 
 // Componente inteligente que decide qual Dashboard mostrar
 const DashboardManager = () => {
-    const { user, logout } = useContext(AuthContext);
-    console.log("Dados do Usuário:", user);
-    return (
-        <div>
-            {/* Navbar Simples */}
-            <div className="navbar bg-base-300 px-8">
-                <div className="flex-1 font-bold text-xl">Champion CRM</div>
-                <div className="flex-none gap-4">
-                    <span>{user?.sub} ({user?.role})</span>
-                    <button onClick={logout} className="btn btn-sm btn-error">Sair</button>
-                </div>
-            </div>
-
-            {/* Decide a tela baseado na Role */}
-            {user?.role === 'ADMIN' ? <GestorDashboard /> : <AgenteDashboard />}
+  const { user, logout } = useContext(AuthContext);
+  console.log("Dados do Usuário:", user);
+  return (
+    <div>
+      {/* Navbar Simples */}
+      <div className="navbar bg-base-300 px-8">
+        <div className="flex-1 font-bold text-xl">Champion CRM</div>
+        <div className="flex-none gap-4">
+          <span>{user?.sub} ({user?.role})</span>
+          <button onClick={logout} className="btn btn-sm btn-error">Sair</button>
         </div>
-    );
+      </div>
+
+      {/* Decide a tela baseado na Role */}
+      {user?.role === 'ADMIN' ? <GestorDashboard /> : <AgenteDashboard />}
+    </div>
+  );
 }
 
 function App() {
   return (
     <div data-theme="champion-theme" className="min-h-screen bg-base-100">
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/" element={<LoginPage />} />
-          <Route path="/dashboard" element={
-            <PrivateRoute>
-              <DashboardManager />
-            </PrivateRoute>
-          } />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<LoginPage />} />
+            <Route path="/dashboard" element={
+              <PrivateRoute>
+                <DashboardManager />
+              </PrivateRoute>
+            } />
+            <Route path="/gerenciamento" element={
+              <PrivateRoute>
+                <GerenciamentoUsuarios />
+              </PrivateRoute>
+            } />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
     </div>
   );
 }
