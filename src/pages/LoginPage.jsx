@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form';
 import { useContext, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import userService from '../services/userService';
 
 export default function LoginPage() {
     const { register, handleSubmit, formState: { errors } } = useForm();
@@ -10,15 +11,18 @@ export default function LoginPage() {
     const [errorMessage, setErrorMessage] = useState("");
 
     const onSubmit = async (data) => {
-        setErrorMessage(""); // Limpa erros anteriores
-        const success = await login(data.email, data.senha);
-        
-        if (success) {
-            navigate('/dashboard'); // Redireciona se der certo
+    try {
+        if (isEditing) {
+            await userService.updateUsuario(editingId, data);
+            // Lógica para atualizar a lista e fechar modal
         } else {
-            setErrorMessage("E-mail ou senha incorretos!");
+            await userService.createUsuario(data);
+            // Lógica para atualizar a lista e fechar modal
         }
-    };
+    } catch (error) {
+        // Exibir alerta/toast de erro para o usuário
+    }
+};
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-base-200">
