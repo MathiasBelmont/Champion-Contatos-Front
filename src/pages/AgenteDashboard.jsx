@@ -1,14 +1,38 @@
 import { useForm } from 'react-hook-form';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import api from '../services/api';
+import ClientList from '../components/Client';
+import { AuthContext } from '../context/AuthContext';
 
 export default function AgenteDashboard() {
+    const { user } = useContext(AuthContext);
+    const isAdmin = user?.role === 'ADMIN';
     const { register, handleSubmit, reset } = useForm();
     const [meusClientes, setMeusClientes] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     useEffect(() => {
         carregarContatos();
     }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
+    const filteredClientes = meusClientes.filter(c => {
+        if (!searchTerm) return true;
+        const term = searchTerm.toLowerCase();
+        const matchName = c.nome ? String(c.nome).toLowerCase().includes(term) : false;
+        const matchPhone = c.telefone ? String(c.telefone).toLowerCase().includes(term) : false;
+        return matchName || matchPhone;
+    });
+
+    const indexOfLastClient = currentPage * itemsPerPage;
+    const indexOfFirstClient = indexOfLastClient - itemsPerPage;
+    const currentClientes = filteredClientes.slice(indexOfFirstClient, indexOfLastClient);
+    const totalPages = Math.ceil(filteredClientes.length / itemsPerPage);
 
     const carregarContatos = async () => {
         try {
@@ -23,10 +47,27 @@ export default function AgenteDashboard() {
         try {
             await api.post('/clientes', data);
             alert("Cliente cadastrado com sucesso!");
-            reset(); 
-            carregarContatos(); 
+            reset();
+            carregarContatos();
         } catch (error) {
             alert("Erro ao cadastrar. Verifique os dados.");
+        }
+    };
+
+    const handleEdit = (cliente) => {
+        alert("Editar cliente: " + cliente.nome + " (Função a ser implementada)");
+    };
+
+    const handleDelete = async (id) => {
+        if (window.confirm("Deseja realmente excluir este cadastro?")) {
+            try {
+                await api.delete(`/clientes/${id}`);
+                alert("Cliente excluído com sucesso");
+                carregarContatos();
+            } catch (error) {
+                console.error(error);
+                alert("Erro ao excluir.");
+            }
         }
     };
 
@@ -36,7 +77,7 @@ export default function AgenteDashboard() {
             <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                 <div>
                     {/* TÍTULO EM VERMELHO (SECONDARY) */}
-                    <h1 className="text-3xl font-bold text-secondary">Painel do Agente</h1>
+                    <h1 className="text-3xl font-bold text-black">Painel do Agente</h1>
                     <p className="text-gray-600 mt-1">Gerencie sua carteira de clientes e leads.</p>
                 </div>
                 <div className="stats shadow bg-white border border-gray-200">
@@ -47,53 +88,53 @@ export default function AgenteDashboard() {
                     </div>
                 </div>
             </div>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
+
                 {/* --- SEÇÃO 1: FORMULÁRIO (Esquerda) --- */}
                 <div className="lg:col-span-1">
                     {/* BORDA SUPERIOR AZUL (PRIMARY) */}
                     <div className="card bg-white shadow-xl border-t-4 border-primary">
                         <div className="card-body">
                             {/* TÍTULO DO CARD EM VERMELHO (SECONDARY) */}
-                            <h2 className="card-title text-secondary mb-4 flex items-center gap-2 border-b pb-2">
+                            <h2 className="card-title text-black mb-4 flex items-center gap-2 border-b pb-2">
                                 {/* ÍCONE EM AZUL (PRIMARY) */}
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
                                 Novo Cadastro
                             </h2>
-                            
+
                             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-                                
+
                                 <div className="form-control">
                                     <label className="label py-1">
                                         <span className="label-text font-medium text-gray-700">Nome Completo</span>
                                     </label>
-                                    <input 
-                                        {...register("nome")} 
-                                        placeholder="Ex: João Silva" 
-                                        className="input input-bordered w-full bg-white focus:input-primary" 
-                                        required 
+                                    <input
+                                        {...register("nome")}
+                                        placeholder="Ex: João Silva"
+                                        className="input input-bordered w-full bg-white focus:input-primary"
+                                        required
                                     />
                                 </div>
-                                
+
                                 <div className="form-control">
                                     <label className="label py-1"><span className="label-text font-medium text-gray-700">E-mail</span></label>
-                                    <input 
-                                        {...register("email")} 
-                                        placeholder="joao@cliente.com" 
-                                        type="email" 
-                                        className="input input-bordered w-full bg-white focus:input-primary" 
-                                        required 
+                                    <input
+                                        {...register("email")}
+                                        placeholder="joao@cliente.com"
+                                        type="email"
+                                        className="input input-bordered w-full bg-white focus:input-primary"
+                                        required
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="form-control">
                                         <label className="label py-1"><span className="label-text font-medium text-gray-700">Telefone</span></label>
-                                        <input 
-                                            {...register("telefone")} 
-                                            placeholder="(00) 00000-0000" 
-                                            className="input input-bordered w-full bg-white focus:input-primary" 
+                                        <input
+                                            {...register("telefone")}
+                                            placeholder="(00) 00000-0000"
+                                            className="input input-bordered w-full bg-white focus:input-primary"
                                         />
                                     </div>
 
@@ -108,7 +149,7 @@ export default function AgenteDashboard() {
                                 </div>
 
                                 {/* BOTÃO AZUL (PRIMARY) */}
-                                <button className="btn btn-primary w-full mt-4 text-white font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
+                                <button className="btn btn-primary w-full mt-4 text-black font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
                                     Salvar Contato
                                 </button>
                             </form>
@@ -120,54 +161,45 @@ export default function AgenteDashboard() {
                 <div className="lg:col-span-2">
                     <div className="card bg-white shadow-xl h-full">
                         <div className="card-body p-0 md:p-6">
-                            {/* TÍTULO EM VERMELHO (SECONDARY) */}
-                            <h2 className="card-title text-secondary px-4 pt-4 md:px-0 md:pt-0">Minha Carteira</h2>
+                            {/* TÍTULO E BUSCA */}
+                            <div className="flex flex-col md:flex-row justify-between items-center px-4 pt-4 md:px-0 md:pt-0 pb-4 gap-4">
+                                <h2 className="card-title text-black">Minha Carteira</h2>
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por nome ou telefone..."
+                                    className="input input-bordered input-sm w-full md:w-72 bg-white focus:input-primary"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
 
-                            {meusClientes.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-64 opacity-50 text-gray-500">
-                                    <p>Nenhum contato encontrado.</p>
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto mt-4">
-                                    <table className="table w-full">
-                                        <thead className="bg-gray-100 text-gray-700 font-bold">
-                                            <tr>
-                                                <th>Nome / Email</th>
-                                                <th>Contato</th>
-                                                <th>Tipo</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100">
-                                            {meusClientes.map(c => (
-                                                <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                                                    <td>
-                                                        <div className="font-bold text-gray-800 text-lg">{c.nome}</div>
-                                                        <div className="text-sm text-gray-500">{c.email}</div>
-                                                    </td>
-                                                    <td className="font-mono text-sm text-gray-600">
-                                                        {c.telefone || "-"}
-                                                    </td>
-                                                    <td>
-                                                        {/* BADGE AZUL SE FOR CLIENTE */}
-                                                        <span className={`badge border-0 font-bold text-white ${c.tipoContato === 'Cliente' ? 'badge-primary' : 'bg-gray-400'}`}>
-                                                            {c.tipoContato}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        {c.aprovado ? 
-                                                            <div className="flex items-center gap-2 text-success font-bold bg-success/10 px-3 py-1 rounded-lg w-fit">
-                                                                <div className="w-2 h-2 rounded-full bg-success"></div> Aprovado
-                                                            </div> : 
-                                                            <div className="flex items-center gap-2 text-warning font-bold bg-warning/10 px-3 py-1 rounded-lg w-fit">
-                                                                <div className="w-2 h-2 rounded-full bg-warning animate-pulse"></div> Pendente
-                                                            </div>
-                                                        }
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                            <ClientList
+                                clientes={currentClientes}
+                                isAdmin={isAdmin}
+                                onEdit={handleEdit}
+                                onDelete={handleDelete}
+                            />
+
+                            {/* PAGINAÇÃO */}
+                            {totalPages > 1 && filteredClientes.length > 0 && (
+                                <div className="flex justify-center mt-6 mb-4 gap-2">
+                                    <button
+                                        className="btn btn-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-100"
+                                        disabled={currentPage === 1}
+                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    >
+                                        « Anterior
+                                    </button>
+                                    <div className="flex items-center px-4 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg">
+                                        Página {currentPage} de {totalPages}
+                                    </div>
+                                    <button
+                                        className="btn btn-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-100"
+                                        disabled={currentPage === totalPages}
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    >
+                                        Próxima »
+                                    </button>
                                 </div>
                             )}
                         </div>
