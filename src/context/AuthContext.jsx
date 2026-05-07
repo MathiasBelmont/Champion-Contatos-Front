@@ -32,23 +32,24 @@ export const AuthProvider = ({ children }) => {
 
     // 2. Função de Login (Chama o Java)
     const login = async (email, password) => {
-        try {
-            const response = await api.post('/auth/login', {
-                login: email,  // Precisa ser igual ao DTO do Java
-                senha: password
-            });
+    try {
+        const response = await api.post('/auth/login', {
+            login: email,
+            senha: password
+        });
 
-            const { token } = response.data;
-            
-            localStorage.setItem('token', token); // Salva no navegador
-            const decoded = jwtDecode(token);
-            setUser(decoded); // Salva no estado do React
-            return true; // Sucesso
-        } catch (error) {
-            console.error("Erro ao logar", error);
-            return false; // Falha
-        }
-    };
+        const { token } = response.data;
+        localStorage.setItem('token', token);
+        
+        const decoded = jwtDecode(token);
+        setUser(decoded); 
+
+        return decoded; // Retornamos o objeto decodificado em vez de apenas 'true'
+    } catch (error) {
+        console.error("Erro ao logar", error);
+        return null; // Retornamos null em caso de erro
+    }
+};
 
     // 3. Função de Logout
     const logout = () => {

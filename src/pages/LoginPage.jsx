@@ -2,7 +2,6 @@ import { useForm } from 'react-hook-form';
 import { useContext, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import userService from '../services/userService';
 
 export default function LoginPage() {
     const { register, handleSubmit, formState: { errors } } = useForm();
@@ -11,16 +10,28 @@ export default function LoginPage() {
     const [errorMessage, setErrorMessage] = useState("");
 
     const onSubmit = async (data) => {
+    setErrorMessage(""); 
+
     try {
-        if (isEditing) {
-            await userService.updateUsuario(editingId, data);
-            // Lógica para atualizar a lista e fechar modal
+        // Agora recebemos os dados do usuário (o que foi retornado no AuthContext)
+        const loggedUser = await login(data.email, data.senha);
+
+        if (loggedUser) {
+            // Verificamos o role que vem do seu JWT (ajuste o nome da propriedade se for diferente no seu backend)
+            const role = loggedUser.role; 
+
+            if (role === 'GESTOR') {
+                navigate('/gestor-dashboard'); // Rota para o dashboard do gestor
+            } else if (role === 'AGENTE') {
+                navigate('/agente-dashboard'); // Rota para o dashboard do agente
+            } else {
+                navigate('/'); // Rota padrão caso algo falhe
+            }
         } else {
-            await userService.createUsuario(data);
-            // Lógica para atualizar a lista e fechar modal
+            setErrorMessage("Usuário ou senha inválidos.");
         }
     } catch (error) {
-        // Exibir alerta/toast de erro para o usuário
+        setErrorMessage("Erro ao conectar com o servidor.");
     }
 };
 
