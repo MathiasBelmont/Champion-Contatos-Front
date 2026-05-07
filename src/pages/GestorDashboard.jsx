@@ -47,7 +47,7 @@ export default function GestorDashboard() {
     const abrirModalEdicao = (usuario) => {
         setUsuarioEdicao(usuario);
         setValue("nome", usuario.nome);
-        setValue("email", usuario.email);
+        setValue("email", usuario.login);
         setValue("role", usuario.role);
         setIsModalOpen(true);
     };
@@ -160,7 +160,7 @@ export default function GestorDashboard() {
                                     type="email"
                                     className="input input-bordered w-full"
                                     placeholder="joao@champion.com"
-                                    {...register("email", { required: "E-mail é obrigatório" })}
+                                    {...register("login", { required: "E-mail/Login é obrigatório" })}
                                 />
                                 {errors.email && <span className="text-error text-xs mt-1">{errors.email.message}</span>}
                             </div>
@@ -186,7 +186,7 @@ export default function GestorDashboard() {
                                     {...register("role", { required: "Role é obrigatória" })}
                                 >
                                     <option value="AGENTE">Agente de Vendas</option>
-                                    <option value="ADMIN">Gestor (Admin)</option>
+                                    <option value="GESTOR">Gestor (Admin)</option>
                                 </select>
                             </div>
 
