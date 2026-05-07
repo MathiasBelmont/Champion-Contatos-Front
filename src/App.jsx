@@ -16,17 +16,23 @@ const AdminRoute = ({ children }) => {
   const { signed, loading, user } = useContext(AuthContext);
   if (loading) return <div className="loading loading-spinner"></div>;
   if (!signed) return <Navigate to="/" />;
-  if (user?.role !== 'ADMIN') return <Navigate to="/dashboard" />;
+  
+  // Agora validamos se o papel é GESTOR_TI
+  if (user?.role !== 'GESTOR_TI') return <Navigate to="/dashboard" />;
   return children;
 };
 
-// Componente inteligente que decide qual Dashboard mostrar
 const DashboardManager = () => {
   const { user, logout } = useContext(AuthContext);
-  console.log("Dados do Usuário:", user);
+
+  // Redirecionamento automático: se for GESTOR_TI e cair aqui, vai para a página de gestão
+  if (user?.role === 'GESTOR_TI') {
+    return <Navigate to="/admin/usuarios" />;
+  }
+
   return (
     <div>
-      {/* Navbar Simples */}
+      {/* Navbar com infos do usuário */}
       <div className="navbar bg-base-300 px-8">
         <div className="flex-1 font-bold text-xl">Champion CRM</div>
         <div className="flex-none gap-4">
@@ -35,8 +41,8 @@ const DashboardManager = () => {
         </div>
       </div>
 
-      {/* Decide a tela baseado na Role */}
-      {user?.role === 'ADMIN' ? <GestorDashboard /> : <AgenteDashboard />}
+      {/* Renderização condicional entre GESTOR e AGENTE */}
+      {user?.role === 'GESTOR' ? <GestorDashboard /> : <AgenteDashboard />}
     </div>
   );
 }

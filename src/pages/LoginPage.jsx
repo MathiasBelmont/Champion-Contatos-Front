@@ -13,20 +13,12 @@ export default function LoginPage() {
     setErrorMessage(""); 
 
     try {
-        // Agora recebemos os dados do usuário (o que foi retornado no AuthContext)
         const loggedUser = await login(data.email, data.senha);
 
         if (loggedUser) {
-            // Verificamos o role que vem do seu JWT (ajuste o nome da propriedade se for diferente no seu backend)
-            const role = loggedUser.role; 
-
-            if (role === 'GESTOR') {
-                navigate('/gestor-dashboard'); // Rota para o dashboard do gestor
-            } else if (role === 'AGENTE') {
-                navigate('/agente-dashboard'); // Rota para o dashboard do agente
-            } else {
-                navigate('/'); // Rota padrão caso algo falhe
-            }
+            // Todos vão para a rota de dashboard, 
+            // a lógica do App.jsx redireciona para a tela certa.
+            navigate('/dashboard'); 
         } else {
             setErrorMessage("Usuário ou senha inválidos.");
         }
