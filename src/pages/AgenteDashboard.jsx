@@ -6,7 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 
 export default function AgenteDashboard() {
     const { user } = useContext(AuthContext);
-    const isAdmin = user?.role === 'ADMIN';
+    const isAdmin = user?.role === 'ADMIN' || user?.role === 'GESTOR';
     const { register, handleSubmit, reset } = useForm();
     const [meusClientes, setMeusClientes] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -71,40 +71,53 @@ export default function AgenteDashboard() {
         }
     };
 
+    // --- NOVA FUNÇÃO DE COPIAR COM REGRA DE NEGÓCIO ---
+    const handleCopiarTelefone = (cliente) => {
+        if (!cliente.aprovado) {
+            alert("Acesso Negado: Você não pode copiar o número de um contato que ainda não foi aprovado pelo Gestor.");
+            return;
+        }
+
+        if (!cliente.telefone) {
+            alert("Este contato não possui um telefone cadastrado.");
+            return;
+        }
+
+        navigator.clipboard.writeText(cliente.telefone)
+            .then(() => {
+                alert(`Número ${cliente.telefone} copiado para a área de transferência!`);
+            })
+            .catch(err => {
+                console.error("Erro ao copiar:", err);
+                alert("Falha ao copiar o número.");
+            });
+    };
+
     return (
         <div className="p-6 max-w-6xl mx-auto text-base-content">
-            {/* Cabeçalho */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                 <div>
-                    {/* TÍTULO EM VERMELHO (SECONDARY) */}
                     <h1 className="text-3xl font-bold text-black">Painel do Agente</h1>
                     <p className="text-gray-600 mt-1">Gerencie sua carteira de clientes e leads.</p>
                 </div>
                 <div className="stats shadow bg-white border border-gray-200">
                     <div className="stat place-items-center">
                         <div className="stat-title text-gray-500 font-semibold">Total na Carteira</div>
-                        {/* NÚMERO EM AZUL (PRIMARY) */}
                         <div className="stat-value text-primary">{meusClientes.length}</div>
                     </div>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                {/* --- SEÇÃO 1: FORMULÁRIO (Esquerda) --- */}
                 <div className="lg:col-span-1">
-                    {/* BORDA SUPERIOR AZUL (PRIMARY) */}
                     <div className="card bg-white shadow-xl border-t-4 border-primary">
                         <div className="card-body">
-                            {/* TÍTULO DO CARD EM VERMELHO (SECONDARY) */}
                             <h2 className="card-title text-black mb-4 flex items-center gap-2 border-b pb-2">
-                                {/* ÍCONE EM AZUL (PRIMARY) */}
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
                                 Novo Cadastro
                             </h2>
 
                             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-
                                 <div className="form-control">
                                     <label className="label py-1">
                                         <span className="label-text font-medium text-gray-700">Nome Completo</span>
@@ -148,7 +161,6 @@ export default function AgenteDashboard() {
                                     </div>
                                 </div>
 
-                                {/* BOTÃO AZUL (PRIMARY) */}
                                 <button className="btn btn-primary w-full mt-4 text-black font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
                                     Salvar Contato
                                 </button>
@@ -157,11 +169,9 @@ export default function AgenteDashboard() {
                     </div>
                 </div>
 
-                {/* --- SEÇÃO 2: LISTA (Direita) --- */}
                 <div className="lg:col-span-2">
                     <div className="card bg-white shadow-xl h-full">
                         <div className="card-body p-0 md:p-6">
-                            {/* TÍTULO E BUSCA */}
                             <div className="flex flex-col md:flex-row justify-between items-center px-4 pt-4 md:px-0 md:pt-0 pb-4 gap-4">
                                 <h2 className="card-title text-black">Minha Carteira</h2>
                                 <input
@@ -178,9 +188,9 @@ export default function AgenteDashboard() {
                                 isAdmin={isAdmin}
                                 onEdit={handleEdit}
                                 onDelete={handleDelete}
+                                onCopiarTelefone={handleCopiarTelefone} /* <-- Nova Propriedade */
                             />
 
-                            {/* PAGINAÇÃO */}
                             {totalPages > 1 && filteredClientes.length > 0 && (
                                 <div className="flex justify-center mt-6 mb-4 gap-2">
                                     <button
@@ -205,7 +215,6 @@ export default function AgenteDashboard() {
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     );
