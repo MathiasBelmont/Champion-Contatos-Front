@@ -9,19 +9,16 @@ export default function ClientList({ clientes, isAdmin, onEdit, onDelete, onCopi
         );
     }
 
-    // Função auxiliar para mascarar/censurar o telefone
     const renderizarTelefone = (cliente) => {
         if (!cliente.telefone) return "-";
         if (cliente.aprovado) return cliente.telefone;
-        
-        // Retorna um texto censurado para contatos pendentes
         return <span className="text-gray-400 italic">(XX) XXXXX-XXXX</span>;
     };
 
     return (
-        <div className="overflow-x-auto mt-4">
+        <div className="overflow-x-auto overflow-y-auto mt-4 max-h-[500px] border border-gray-100 rounded-lg relative">
             <table className="table w-full">
-                <thead className="bg-gray-100 text-gray-700 font-bold">
+                <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10">
                     <tr>
                         <th>Nome / Email</th>
                         <th>Contato</th>
@@ -38,11 +35,11 @@ export default function ClientList({ clientes, isAdmin, onEdit, onDelete, onCopi
                                 <div className="text-sm text-gray-500">{c.email}</div>
                             </td>
                             <td className="font-mono text-sm text-gray-600">
-                                {/* Aplica a regra visual de censura */}
                                 {renderizarTelefone(c)}
                             </td>
                             <td>
-                                <span className={`badge border-0 font-bold text-white ${c.tipoContato === 'Cliente' ? 'badge-primary' : 'bg-gray-400'}`}>
+                                {/* TAG DO TIPO CLIENTE EM VERMELHO */}
+                                <span className={`badge border-0 font-bold text-white ${c.tipoContato === 'Cliente' ? 'bg-[#ff5e62]' : 'bg-gray-400'}`}>
                                     {c.tipoContato}
                                 </span>
                             </td>
@@ -58,11 +55,11 @@ export default function ClientList({ clientes, isAdmin, onEdit, onDelete, onCopi
                             </td>
                             <td className="flex gap-2">
                                 
-                                {/* BOTÃO DE COPIAR */}
+                                {/* BOTÃO COPIAR CORRIGIDO (Cinza Escuro com Texto Branco) */}
                                 <button 
                                     onClick={() => onCopiarTelefone && onCopiarTelefone(c)}
-                                    disabled={!c.aprovado} // Desabilita o botão se não estiver aprovado
-                                    className="btn btn-neutral btn-sm text-white disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                                    disabled={!c.aprovado}
+                                    className="btn btn-sm bg-gray-700 hover:bg-gray-800 text-white border-none disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
                                     title={c.aprovado ? "Copiar Número" : "Aguardando Aprovação"}
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,12 +68,12 @@ export default function ClientList({ clientes, isAdmin, onEdit, onDelete, onCopi
                                     Copiar
                                 </button>
 
-                                {/* BOTÕES DE EDITAR E EXCLUIR (Apenas Admin/Gestor) */}
                                 {isAdmin && (
                                     <>
+                                        {/* BOTÃO EDITAR EM VERMELHO */}
                                         <button 
                                             onClick={() => onEdit && onEdit(c)}
-                                            className="btn btn-sm btn-primary"
+                                            className="btn btn-sm bg-[#ff5e62] hover:bg-[#e65558] text-white border-none"
                                         >
                                             Editar
                                         </button>
