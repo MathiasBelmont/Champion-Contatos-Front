@@ -11,11 +11,9 @@ export default function GerenciamentoUsuarios() {
     const [usuarios, setUsuarios] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Estados do Modal
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [usuarioEdicao, setUsuarioEdicao] = useState(null);
 
-    // Configuração do formulário
     const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm();
 
     useEffect(() => {
@@ -35,18 +33,20 @@ export default function GerenciamentoUsuarios() {
         }
     };
 
-    // --- AÇÕES DO MODAL ---
     const abrirModalNovo = () => {
         setUsuarioEdicao(null);
-        reset(); // Limpa o formulário
+        // Default: ao criar, o usuário já nasce ativo
+        reset({ ativo: true, role: 'AGENTE' }); 
         setIsModalOpen(true);
     };
 
     const abrirModalEdicao = (usuario) => {
         setUsuarioEdicao(usuario);
         setValue("nome", usuario.nome);
-        setValue("login", usuario.login); // Usamos login conforme o back-end
+        setValue("login", usuario.login); 
         setValue("role", usuario.role);
+        // Se a propriedade ativo não existir, assumimos true
+        setValue("ativo", usuario.ativo !== false); 
         setIsModalOpen(true);
     };
 
@@ -56,20 +56,17 @@ export default function GerenciamentoUsuarios() {
         reset();
     };
 
-    // --- REQUISIÇÕES CRUD ---
     const onSubmitUsuario = async (data) => {
         try {
             if (usuarioEdicao) {
-                // Se tem ID, é edição (PUT)
                 await api.put(`/usuarios/${usuarioEdicao.id}`, data);
                 alert("Usuário atualizado com sucesso!");
             } else {
-                // Sem ID, é cadastro novo (POST)
                 await api.post('/usuarios', data);
                 alert("Usuário cadastrado com sucesso!");
             }
             fecharModal();
-            carregarUsuarios(); // Recarrega a tabela atualizada
+            carregarUsuarios(); 
         } catch (error) {
             console.error("Erro ao salvar usuário", error);
             alert("Erro ao salvar usuário. Verifique os dados.");
@@ -77,11 +74,11 @@ export default function GerenciamentoUsuarios() {
     };
 
     const handleRemover = async (id) => {
-        if (window.confirm("Tem certeza que deseja remover este usuário? O acesso dele será revogado.")) {
+        if (window.confirm("Tem certeza que deseja remover este usuário permanentemente? É recomendado apenas inativar.")) {
             try {
                 await api.delete(`/usuarios/${id}`);
                 alert("Usuário removido com sucesso!");
-                carregarUsuarios(); // Recarrega a tabela sem o usuário deletado
+                carregarUsuarios(); 
             } catch (error) {
                 console.error("Erro ao remover usuário", error);
                 alert("Erro ao remover usuário.");
@@ -96,7 +93,6 @@ export default function GerenciamentoUsuarios() {
 
     return (
         <div className="min-h-screen bg-base-100">
-            {/* Navbar Exclusiva para o Gestor TI */}
             <div className="navbar bg-base-300 px-8 shadow-sm">
                 <div className="flex-1 font-bold text-xl">Champion CRM - Painel TI</div>
                 <div className="flex-none gap-4">
@@ -106,7 +102,6 @@ export default function GerenciamentoUsuarios() {
             </div>
 
             <div className="p-8 max-w-6xl mx-auto text-base-content mt-4">
-                {/* Cabeçalho superior com título e estatísticas */}
                 <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-black">Gerenciamento de Usuários</h1>
@@ -120,10 +115,8 @@ export default function GerenciamentoUsuarios() {
                     </div>
                 </div>
 
-                {/* Container principal da Tabela */}
                 <div className="card bg-white shadow-xl border-t-4 border-primary">
                     <div className="card-body">
-                        {/* Cabeçalho da tabela com botão de ação */}
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="card-title text-black flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -138,16 +131,12 @@ export default function GerenciamentoUsuarios() {
                             </button>
                         </div>
 
-                        {/* Exibição condicional de carregamento, lista vazia ou tabela */}
                         {loading ? (
                             <div className="flex justify-center items-center h-48">
                                 <span className="loading loading-spinner loading-lg text-primary"></span>
                             </div>
                         ) : usuarios.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-48 opacity-50 text-gray-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
                                 <p className="text-lg">Nenhum usuário encontrado no sistema.</p>
                             </div>
                         ) : (
@@ -163,7 +152,7 @@ export default function GerenciamentoUsuarios() {
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {usuarios.map((u) => (
-                                            <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                                            <tr key={u.id} className={`hover:bg-gray-50 transition-colors ${u.ativo === false ? 'opacity-60' : ''}`}>
                                                 <td>
                                                     <div className="font-bold text-gray-800 text-lg">{u.nome || "Usuário " + u.id}</div>
                                                     <div className="text-sm text-gray-500">{u.email || u.login}</div>
@@ -174,20 +163,21 @@ export default function GerenciamentoUsuarios() {
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <div className="flex items-center gap-2 text-success font-bold bg-success/10 px-3 py-1 rounded-lg w-fit">
-                                                        <div className="w-2 h-2 rounded-full bg-success"></div> Ativo
-                                                    </div>
+                                                    {u.ativo !== false ? (
+                                                        <div className="flex items-center gap-2 text-success font-bold bg-success/10 px-3 py-1 rounded-lg w-fit">
+                                                            <div className="w-2 h-2 rounded-full bg-success"></div> Ativo
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-2 text-error font-bold bg-error/10 px-3 py-1 rounded-lg w-fit">
+                                                            <div className="w-2 h-2 rounded-full bg-error"></div> Inativo
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td className="text-right">
                                                     <button 
                                                         onClick={() => abrirModalEdicao(u)}
                                                         className="btn btn-ghost btn-sm text-primary hover:bg-primary/10">
                                                         Editar
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleRemover(u.id)}
-                                                        className="btn btn-ghost btn-sm text-error hover:bg-error/10">
-                                                        Remover
                                                     </button>
                                                 </td>
                                             </tr>
@@ -199,7 +189,6 @@ export default function GerenciamentoUsuarios() {
                     </div>
                 </div>
 
-                {/* --- MODAL DE CADASTRO/EDIÇÃO --- */}
                 {isModalOpen && (
                     <div className="modal modal-open">
                         <div className="modal-box bg-white">
@@ -208,6 +197,22 @@ export default function GerenciamentoUsuarios() {
                             </h3>
 
                             <form onSubmit={handleSubmit(onSubmitUsuario)} className="space-y-4">
+                                
+                                {/* NOVO TOGGLE DE ATIVO/INATIVO */}
+                                <div className="form-control w-full border border-gray-200 rounded-lg p-3 bg-gray-50">
+                                    <label className="cursor-pointer flex items-center justify-between">
+                                        <div>
+                                            <span className="label-text font-bold text-gray-800 block">Conta Ativa</span>
+                                            <span className="text-xs text-gray-500">Permite o acesso ao sistema</span>
+                                        </div>
+                                        <input
+                                            type="checkbox"
+                                            className="toggle toggle-success"
+                                            {...register("ativo")}
+                                        />
+                                    </label>
+                                </div>
+
                                 <div className="form-control w-full">
                                     <label className="label"><span className="label-text">Nome Completo</span></label>
                                     <input
@@ -230,7 +235,6 @@ export default function GerenciamentoUsuarios() {
                                     {errors.login && <span className="text-error text-xs mt-1">{errors.login.message}</span>}
                                 </div>
 
-                                {/* A senha é opcional na edição, mas obrigatória na criação */}
                                 <div className="form-control w-full">
                                     <label className="label">
                                         <span className="label-text">Senha {usuarioEdicao && "(Deixe em branco para manter a atual)"}</span>
