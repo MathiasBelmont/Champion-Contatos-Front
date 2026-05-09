@@ -14,7 +14,11 @@ export default function GerenciamentoUsuarios() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [usuarioEdicao, setUsuarioEdicao] = useState(null);
 
-    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm();
+    // ADICIONADO: 'watch' para observar o valor do toggle em tempo real
+    const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm();
+    
+    // Observa o campo "ativo" do formulário. Se for undefined (inicio), assume true.
+    const isAtivo = watch("ativo", true);
 
     useEffect(() => {
         carregarUsuarios();
@@ -35,7 +39,6 @@ export default function GerenciamentoUsuarios() {
 
     const abrirModalNovo = () => {
         setUsuarioEdicao(null);
-        // Default: ao criar, o usuário já nasce ativo
         reset({ ativo: true, role: 'AGENTE' }); 
         setIsModalOpen(true);
     };
@@ -45,7 +48,7 @@ export default function GerenciamentoUsuarios() {
         setValue("nome", usuario.nome);
         setValue("login", usuario.login); 
         setValue("role", usuario.role);
-        // Se a propriedade ativo não existir, assumimos true
+        // Garantindo que o React Hook Form pegue o valor booleano correto
         setValue("ativo", usuario.ativo !== false); 
         setIsModalOpen(true);
     };
@@ -58,6 +61,11 @@ export default function GerenciamentoUsuarios() {
 
     const onSubmitUsuario = async (data) => {
         try {
+            // Garantir que a senha vazia não seja enviada na edição
+            if (usuarioEdicao && !data.senha) {
+                delete data.senha;
+            }
+
             if (usuarioEdicao) {
                 await api.put(`/usuarios/${usuarioEdicao.id}`, data);
                 alert("Usuário atualizado com sucesso!");
@@ -69,20 +77,7 @@ export default function GerenciamentoUsuarios() {
             carregarUsuarios(); 
         } catch (error) {
             console.error("Erro ao salvar usuário", error);
-            alert("Erro ao salvar usuário. Verifique os dados.");
-        }
-    };
-
-    const handleRemover = async (id) => {
-        if (window.confirm("Tem certeza que deseja remover este usuário permanentemente? É recomendado apenas inativar.")) {
-            try {
-                await api.delete(`/usuarios/${id}`);
-                alert("Usuário removido com sucesso!");
-                carregarUsuarios(); 
-            } catch (error) {
-                console.error("Erro ao remover usuário", error);
-                alert("Erro ao remover usuário.");
-            }
+            alert("Erro ao salvar usuário. Verifique os dados no console.");
         }
     };
 
@@ -198,16 +193,19 @@ export default function GerenciamentoUsuarios() {
 
                             <form onSubmit={handleSubmit(onSubmitUsuario)} className="space-y-4">
                                 
-                                {/* NOVO TOGGLE DE ATIVO/INATIVO */}
+                                {/* TOGGLE DINÂMICO (Verde quando Ativo, Vermelho quando Inativo) */}
                                 <div className="form-control w-full border border-gray-200 rounded-lg p-3 bg-gray-50">
                                     <label className="cursor-pointer flex items-center justify-between">
                                         <div>
-                                            <span className="label-text font-bold text-gray-800 block">Conta Ativa</span>
-                                            <span className="text-xs text-gray-500">Permite o acesso ao sistema</span>
+                                            <span className="label-text font-bold text-gray-800 block">Status da Conta</span>
+                                            <span className={`text-xs font-bold ${isAtivo ? 'text-success' : 'text-error'}`}>
+                                                {isAtivo ? 'Usuário pode acessar o sistema' : 'Acesso bloqueado temporariamente'}
+                                            </span>
                                         </div>
                                         <input
                                             type="checkbox"
-                                            className="toggle toggle-success"
+                                            // Se isAtivo for true, usa toggle-success (Verde). Se for false, usa toggle-error (Vermelho).
+                                            className={`toggle ${isAtivo ? 'toggle-success' : 'toggle-error'}`}
                                             {...register("ativo")}
                                         />
                                     </label>
