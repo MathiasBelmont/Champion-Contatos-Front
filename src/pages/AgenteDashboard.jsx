@@ -1,14 +1,17 @@
 import { useForm } from 'react-hook-form';
-import { useEffect, useState, useContext, useRef } from 'react';
-import api from '../services/api';
-import ClientList from '../components/Client';
-import { AuthContext } from '../context/AuthContext';
+import { useEffect, useState, useRef } from 'react';
 
 export default function AgenteDashboard() {
-    const { user } = useContext(AuthContext);
-    const isAdmin = user?.role === 'ADMIN' || user?.role === 'GESTOR';
+    // Definido estaticamente para simulação visual sem quebrar o contexto
+    const isAdmin = false; 
     const { register, handleSubmit, reset } = useForm();
-    const [meusClientes, setMeusClientes] = useState([]);
+    
+    // --- DADOS FALSOS INJETADOS PARA DESIGN (MOCK) ---
+    const [meusClientes, setMeusClientes] = useState([
+        { id: 1, nome: "Agropecuária Vale do Cedro", email: "contato@valedocedro.com.br", telefone: "(62) 99122-4455", tipoContato: "Cliente", aprovado: true },
+        { id: 2, nome: "Fazenda Nova Esperança", email: "suporte@novaesperanca.com", telefone: "(64) 98133-7788", tipoContato: "Lead", aprovado: false },
+        { id: 3, nome: "Distribuidora PetGoiás", email: "comercial@petgoias.com", telefone: "(62) 3315-9900", tipoContato: "Parceiro", aprovado: true }
+    ]);
     
     const [searchTerm, setSearchTerm] = useState('');
     const [filterTipo, setFilterTipo] = useState('Todos'); 
@@ -17,10 +20,6 @@ export default function AgenteDashboard() {
     
     const fileInputRef = useRef(null);
     const [isImporting, setIsImporting] = useState(false);
-
-    useEffect(() => {
-        carregarContatos();
-    }, []);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -33,7 +32,6 @@ export default function AgenteDashboard() {
                             (c.telefone && String(c.telefone).toLowerCase().includes(term));
         
         const matchTipo = filterTipo === 'Todos' || c.tipoContato === filterTipo;
-
         return matchSearch && matchTipo;
     });
 
@@ -42,40 +40,28 @@ export default function AgenteDashboard() {
     const currentClientes = filteredClientes.slice(indexOfFirstClient, indexOfLastClient);
     const totalPages = Math.ceil(filteredClientes.length / itemsPerPage);
 
-    const carregarContatos = async () => {
-        try {
-            const res = await api.get('/clientes/meus');
-            setMeusClientes(res.data);
-        } catch (error) {
-            console.error("Erro ao buscar clientes", error);
-        }
-    }
-
-    const onSubmit = async (data) => {
-        try {
-            await api.post('/clientes', data);
-            alert("Cliente cadastrado com sucesso!");
-            reset();
-            carregarContatos();
-        } catch (error) {
-            alert("Erro ao cadastrar. Verifique os dados.");
-        }
+    const onSubmit = (data) => {
+        alert("Contato cadastrado ficticiamente!");
+        const novoContato = {
+            id: Date.now(),
+            nome: data.nome,
+            email: data.email,
+            telefone: data.telefone,
+            tipoContato: data.tipoContato,
+            aprovado: false
+        };
+        setMeusClientes([novoContato, ...meusClientes]);
+        reset();
     };
 
     const handleEdit = (cliente) => {
-        alert("Editar cliente: " + cliente.nome + " (Função a ser implementada)");
+        alert("Editar cliente: " + cliente.nome);
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = (id) => {
         if (window.confirm("Deseja realmente excluir este cadastro?")) {
-            try {
-                await api.delete(`/clientes/${id}`);
-                alert("Cliente excluído com sucesso");
-                carregarContatos();
-            } catch (error) {
-                console.error(error);
-                alert("Erro ao excluir.");
-            }
+            setMeusClientes(meusClientes.filter(c => c.id !== id));
+            alert("Cliente excluído com sucesso!");
         }
     };
 
@@ -84,235 +70,175 @@ export default function AgenteDashboard() {
             alert("Acesso Negado: Você não pode copiar o número de um contato que ainda não foi aprovado pelo Gestor.");
             return;
         }
-
-        if (!cliente.telefone) {
-            alert("Este contato não possui um telefone cadastrado.");
-            return;
-        }
-
         navigator.clipboard.writeText(cliente.telefone)
-            .then(() => {
-                alert(`Número ${cliente.telefone} copiado para a área de transferência!`);
-            })
-            .catch(err => {
-                console.error("Erro ao copiar:", err);
-                alert("Falha ao copiar o número.");
-            });
+            .then(() => alert(`Número ${cliente.telefone} copiado!`));
     };
 
     const handleImportClick = () => {
         fileInputRef.current.click();
     };
 
-    const handleFileChange = async (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
-
+    const handleFileChange = () => {
         setIsImporting(true);
-        const reader = new FileReader();
-
-        reader.onload = async (e) => {
-            const text = e.target.result;
-            const rows = text.split('\n');
-            let successCount = 0;
-            let errorCount = 0;
-
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i].trim();
-                if (!row) continue;
-
-                const cols = row.split(/[,;]/); 
-
-                if (cols.length >= 2) { 
-                    const contato = {
-                        nome: cols[0]?.trim(),
-                        email: cols[1]?.trim(),
-                        telefone: cols[2]?.trim() || "",
-                        tipoContato: cols[3]?.trim() || "Lead"
-                    };
-
-                    if (contato.nome && contato.email) {
-                        try {
-                            await api.post('/clientes', contato);
-                            successCount++;
-                        } catch (err) {
-                            console.error(`Erro ao importar a linha ${i}:`, err);
-                            errorCount++;
-                        }
-                    }
-                }
-            }
-            
-            alert(`Importação Concluída!\n- Sucesso: ${successCount}\n- Erros/Ignorados: ${errorCount}`);
-            carregarContatos();
+        setTimeout(() => {
+            alert("Simulação de importação concluída!");
             setIsImporting(false);
-            event.target.value = null; 
-        };
-
-        reader.readAsText(file);
+        }, 1000);
     };
 
     return (
-        <div className="p-6 max-w-6xl mx-auto text-base-content">
-            <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <div className="p-6 md:p-10 max-w-7xl mx-auto bg-slate-50 min-h-screen text-slate-800">
+            
+            {/* HEADER E INDICADOR DE STATUS */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4 px-1 pt-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-black">Painel do Agente</h1>
-                    <p className="text-gray-600 mt-1">Gerencie sua carteira de clientes e leads.</p>
+                    <h1 className="text-3xl font-extrabold text-slate-900 border-l-4 border-[#e6151a] pl-4 tracking-tight">
+                        Painel do Agente
+                    </h1>
+                    <p className="text-slate-500 text-sm ml-4 mt-1">Gerencie sua carteira de clientes e leads.</p>
                 </div>
-                <div className="stats shadow bg-white border border-gray-200">
-                    <div className="stat place-items-center">
-                        <div className="stat-title text-gray-500 font-semibold">Total na Carteira</div>
-                        {/* NÚMERO EM VERMELHO */}
-                        <div className="stat-value text-[#e6151a]">{meusClientes.length}</div>
+                
+                <div className="card bg-white border border-slate-200/80 shadow-sm flex flex-row items-center gap-4 px-6 py-4 rounded-xl w-full sm:w-auto min-w-[220px]">
+                    <div className="p-3 bg-red-50 text-[#e6151a] rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.115a4.123 4.123 0 0 1-.657 2.183M6.25 19.252a7.486 7.486 0 0 1 5.855-5.855M6.25 19.252a11.95 11.95 0 0 0-4.119-.952 4.125 4.125 0 0 0-2.493 7.533 11.95 11.95 0 0 0 6.612 1.748M6.25 19.252a7.486 7.486 0 0 0 5.855 5.855M12 12.75a4.125 4.125 0 1 0 0-8.25 4.125 4.125 0 0 0 0 8.25Z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total na Carteira</div>
+                        <div className="text-2xl font-black text-slate-900">{meusClientes.length}</div>
                     </div>
                 </div>
             </div>
 
+            {/* SEÇÃO PRINCIPAL EM GRID */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1">
-                    {/* BARRA SUPERIOR DO CARD EM VERMELHO */}
-                    <div className="card bg-white shadow-xl border-t-4 border-[#e6151a] h-fit">
-                        <div className="card-body">
-                            
-                            <div className="flex justify-between items-center border-b pb-2 mb-4">
-                                <h2 className="card-title text-black flex items-center gap-2">
-                                    {/* ÍCONE EM VERMELHO */}
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#e6151a]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
-                                    Novo Cadastro
-                                </h2>
-                                
-                                <input 
-                                    type="file" 
-                                    accept=".csv" 
-                                    ref={fileInputRef} 
-                                    style={{ display: 'none' }} 
-                                    onChange={handleFileChange} 
-                                />
-                                {/* BOTÃO DE IMPORTAR EM VERMELHO (OUTLINE) */}
-                                <button 
-                                    type="button" 
-                                    onClick={handleImportClick}
-                                    disabled={isImporting}
-                                    className="btn btn-sm bg-transparent border-[#e6151a] text-[#e6151a] hover:bg-[#e6151a] hover:text-white hover:border-[#e6151a]"
-                                    title={"Padrão do arquivo CSV:\nNome, Email, Telefone, Tipo\n(A primeira linha será ignorada)"}
-                                >
-                                    {isImporting ? <span className="loading loading-spinner loading-xs"></span> : "Importar .CSV"}
-                                </button>
+                
+                {/* FORMULÁRIO DE CADASTRO */}
+                <div className="card bg-white shadow-sm border border-slate-200/80 rounded-xl overflow-hidden h-fit">
+                    <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                        <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-[#e6151a]">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+                            </svg>
+                            Novo Cadastro
+                        </h2>
+                        
+                        <input type="file" accept=".csv" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileChange} />
+                        <button type="button" onClick={handleImportClick} disabled={isImporting} className="btn btn-sm bg-transparent border-slate-300 text-slate-600 hover:bg-slate-100 px-3 font-bold normal-case rounded-md">
+                            {isImporting ? <span className="loading loading-spinner loading-xs"></span> : "Importar .CSV"}
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+                        <div className="form-control">
+                            <label className="label-text font-bold text-slate-700 mb-1.5">Nome Completo</label>
+                            <input type="text" placeholder="Ex: João Silva" className="input input-bordered border-2 border-slate-300 focus:border-[#e6151a] text-slate-800 font-medium h-10 bg-white" {...register("nome")} required />
+                        </div>
+
+                        <div className="form-control">
+                            <label className="label-text font-bold text-slate-700 mb-1.5">E-mail</label>
+                            <input type="email" placeholder="joao@cliente.com" className="input input-bordered border-2 border-slate-300 focus:border-[#e6151a] text-slate-800 font-medium h-10 bg-white" {...register("email")} required />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="form-control">
+                                <label className="label-text font-bold text-slate-700 mb-1.5">Telefone</label>
+                                <input type="text" placeholder="(62) 9..." className="input input-bordered border-2 border-slate-300 focus:border-[#e6151a] text-slate-800 font-medium h-10 bg-white" {...register("telefone")} />
                             </div>
 
-                            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-                                <div className="form-control">
-                                    <label className="label py-1">
-                                        <span className="label-text font-medium text-gray-700">Nome Completo</span>
-                                    </label>
-                                    <input
-                                        {...register("nome")}
-                                        placeholder="Ex: João Silva"
-                                        className="input input-bordered w-full bg-white focus:outline-[#e6151a] focus:border-[#e6151a]"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="form-control">
-                                    <label className="label py-1"><span className="label-text font-medium text-gray-700">E-mail</span></label>
-                                    <input
-                                        {...register("email")}
-                                        placeholder="joao@cliente.com"
-                                        type="email"
-                                        className="input input-bordered w-full bg-white focus:outline-[#e6151a] focus:border-[#e6151a]"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="form-control">
-                                        <label className="label py-1"><span className="label-text font-medium text-gray-700">Telefone</span></label>
-                                        <input
-                                            {...register("telefone")}
-                                            placeholder="(00) 00000-0000"
-                                            className="input input-bordered w-full bg-white focus:outline-[#e6151a] focus:border-[#e6151a]"
-                                        />
-                                    </div>
-
-                                    <div className="form-control">
-                                        <label className="label py-1"><span className="label-text font-medium text-gray-700">Tipo</span></label>
-                                        <select {...register("tipoContato")} className="select select-bordered w-full bg-white focus:outline-[#e6151a] focus:border-[#e6151a]">
-                                            <option value="Lead">Lead</option>
-                                            <option value="Cliente">Cliente</option>
-                                            <option value="Parceiro">Parceiro</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* BOTÃO SALVAR EM VERMELHO SÓLIDO */}
-                                <button className="btn w-full mt-4 text-white font-bold shadow-lg shadow-[#e6151a]/20 border-none bg-[#e6151a] hover:bg-[#e65558] hover:scale-105 transition-transform">
-                                    Salvar Contato
-                                </button>
-                            </form>
+                            <div className="form-control">
+                                <label className="label-text font-bold text-slate-700 mb-1.5">Tipo</label>
+                                <select className="select select-bordered border-2 border-slate-300 focus:border-[#e6151a] text-slate-800 font-bold h-10 min-h-0 pl-4 bg-white" {...register("tipoContato")}>
+                                    <option value="Lead">Lead</option>
+                                    <option value="Cliente">Cliente</option>
+                                    <option value="Parceiro">Parceiro</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
+
+                        <button type="submit" className="btn bg-[#e6151a] hover:bg-[#c41217] text-white border-none w-full font-bold normal-case mt-4 shadow-md shadow-red-600/10">
+                            Salvar Contato
+                        </button>
+                    </form>
                 </div>
 
-                <div className="lg:col-span-2">
-                    <div className="card bg-white shadow-xl h-full">
-                        <div className="card-body p-0 md:p-6">
-                            
-                            <div className="flex flex-col xl:flex-row justify-between items-center px-4 pt-4 md:px-0 md:pt-0 pb-4 gap-4">
-                                <h2 className="card-title text-black whitespace-nowrap">Minha Carteira</h2>
-                                
-                                <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
-                                    <select 
-                                        className="select select-bordered select-sm bg-white focus:outline-[#e6151a] focus:border-[#e6151a] w-full sm:w-40"
-                                        value={filterTipo}
-                                        onChange={(e) => setFilterTipo(e.target.value)}
-                                    >
-                                        <option value="Todos">Todos os Tipos</option>
-                                        <option value="Lead">Lead</option>
-                                        <option value="Cliente">Cliente</option>
-                                        <option value="Parceiro">Parceiro</option>
-                                    </select>
-                                    
-                                    <input
-                                        type="text"
-                                        placeholder="Buscar nome ou telefone..."
-                                        className="input input-bordered input-sm w-full sm:w-64 bg-white focus:outline-[#e6151a] focus:border-[#e6151a]"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <ClientList
-                                clientes={currentClientes}
-                                isAdmin={isAdmin}
-                                onEdit={handleEdit}
-                                onDelete={handleDelete}
-                                onCopiarTelefone={handleCopiarTelefone} 
-                            />
-
-                            {totalPages > 1 && filteredClientes.length > 0 && (
-                                <div className="flex justify-center mt-6 mb-4 gap-2">
-                                    <button
-                                        className="btn btn-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-100"
-                                        disabled={currentPage === 1}
-                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                    >
-                                        « Anterior
-                                    </button>
-                                    <div className="flex items-center px-4 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg">
-                                        Página {currentPage} de {totalPages}
-                                    </div>
-                                    <button
-                                        className="btn btn-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-100"
-                                        disabled={currentPage === totalPages}
-                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                    >
-                                        Próxima »
-                                    </button>
-                                </div>
-                            )}
+                {/* VISUALIZAÇÃO DA CARTEIRA INLINE */}
+                <div className="card bg-white shadow-sm border border-slate-200/80 rounded-xl overflow-hidden lg:col-span-2">
+                    <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <h2 className="text-lg font-bold text-slate-900">Minha Carteira</h2>
+                        
+                        <div className="flex gap-2 w-full sm:w-auto">
+                            <select className="select select-bordered border-2 border-slate-700 text-slate-900 text-xs font-bold h-9 min-h-0 pl-4 bg-white" value={filterTipo} onChange={(e) => setFilterTipo(e.target.value)}>
+                                <option value="Todos">Todos os Tipos</option>
+                                <option value="Lead">Lead</option>
+                                <option value="Cliente">Cliente</option>
+                                <option value="Parceiro">Parceiro</option>
+                            </select>
+                            <input type="text" placeholder="Buscar por nome ou tel..." className="input input-bordered border-2 border-slate-700 text-slate-900 text-xs font-medium h-9 w-full sm:w-56 bg-white px-3" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
                     </div>
+
+                    <div className="p-0">
+                        {currentClientes.length === 0 ? (
+                            <div className="py-16 text-center text-slate-400 font-semibold">Nenhum contato encontrado nesta carteira.</div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="table w-full border-collapse">
+                                    <thead>
+                                        <tr className="bg-slate-50 text-slate-600 border-b border-slate-200">
+                                            <th className="bg-transparent py-4 pl-6">Nome / E-mail</th>
+                                            <th className="bg-transparent py-4">Telefone</th>
+                                            <th className="bg-transparent py-4">Tipo</th>
+                                            <th className="bg-transparent py-4 text-center pr-6">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {currentClientes.map(c => (
+                                            <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                                                <td className="py-4 pl-6">
+                                                    <div className="font-semibold text-slate-900">{c.nome}</div>
+                                                    <div className="text-xs text-slate-400 font-medium">{c.email}</div>
+                                                </td>
+                                                <td className="py-4 font-mono text-xs text-slate-600 font-semibold">{c.telefone || "-"}</td>
+                                                <td className="py-4">
+                                                    <span className={`badge border-none text-white font-bold text-[10px] px-2.5 py-2 ${c.tipoContato === 'Cliente' ? 'bg-[#e6151a]' : c.tipoContato === 'Lead' ? 'bg-amber-500' : 'bg-blue-500'}`}>
+                                                        {c.tipoContato}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 text-center pr-6 space-x-1 whitespace-nowrap">
+                                                    <button onClick={() => handleCopiarTelefone(c)} className="btn btn-xs bg-slate-100 hover:bg-slate-200 text-slate-700 border-none rounded font-bold" title="Copiar Telefone">
+                                                        Copiar
+                                                    </button>
+                                                    <button onClick={() => handleEdit(c)} className="btn btn-xs bg-blue-50 hover:bg-blue-100 text-blue-600 border-none rounded font-bold">
+                                                        Editar
+                                                    </button>
+                                                    <button onClick={() => handleDelete(c.id)} className="btn btn-xs bg-red-50 hover:bg-red-100 text-red-600 border-none rounded font-bold">
+                                                        Excluir
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* PAGINAÇÃO */}
+                    {totalPages > 1 && (
+                        <div className="flex justify-center my-6 gap-2">
+                            <button className="btn btn-xs h-8 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}>
+                                « Anterior
+                            </button>
+                            <div className="flex items-center px-3 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg">
+                                Página {currentPage} de {totalPages}
+                            </div>
+                            <button className="btn btn-xs h-8 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}>
+                                Próxima »
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
